@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamVault — Player</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    body { background: #000; }
+
+    /* Full-screen player layout */
+    .sv-player-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sv-player-wrap {
+      position: relative;
+      width: 100%;
+      background: #000;
+      aspect-ratio: 16/9;
+      max-height: 75vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sv-player-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg,#030712,#0a1628,#1a3a6b,#0f2044,#030712);
+      background-size: 400% 400%;
+      animation: gradShift 10s ease infinite;
+    }
+
+    @keyframes gradShift {
+      0%,100% { background-position: 0% 50%; }
+      50%      { background-position: 100% 50%; }
+    }
+
+    .sv-player-content-icon {
+      position: relative; z-index: 2;
+      font-size: 6rem; opacity: 0.1;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Controls overlay */
+    .sv-player-controls {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      z-index: 10;
+      padding: 4rem 2rem 1.5rem;
+      background: linear-gradient(to top, rgba(3,7,18,0.98) 0%, transparent 100%);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .sv-player-wrap:hover .sv-player-controls { opacity: 1; }
+
+    .sv-player-progress {
+      width: 100%; height: 4px;
+      background: rgba(59,130,246,0.2);
+      border-radius: 2px;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      position: relative;
+    }
+    .sv-player-progress:hover { height: 6px; }
+
+    .sv-player-progress-fill {
+      height: 100%;
+      background: linear-gradient(to right, var(--sap-400), var(--sap-200));
+      border-radius: 2px;
+      position: relative;
+      transition: width .3s linear;
+    }
+    .sv-player-progress-fill::after {
+      content: '';
+      position: absolute; right: -7px; top: 50%;
+      transform: translateY(-50%);
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--sap-200);
+      box-shadow: 0 0 10px var(--sap-glow-strong);
+    }
+
+    .sv-player-btns {
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+
+    .sv-ctrl-btn {
+      background: none; border: none;
+      color: rgba(248,250,252,0.8);
+      font-size: 1.1rem; cursor: pointer;
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, color .2s;
+    }
+    .sv-ctrl-btn:hover { background: rgba(59,130,246,0.2); color: var(--sap-200); }
+
+    .sv-player-time {
+      font-size: 0.8rem;
+      color: rgba(248,250,252,0.55);
+      font-variant-numeric: tabular-nums;
+      margin: 0 0.4rem;
+    }
+
+    .sv-player-title-bar {
+      margin-left: auto;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+      color: rgba(248,250,252,0.7);
+    }
+
+    /* Big play button in center */
+    .sv-big-play {
+      position: absolute; inset: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+
+    .sv-big-play-btn {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: rgba(59,130,246,0.25);
+      border: 2px solid rgba(59,130,246,0.6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.2rem;
+      backdrop-filter: blur(8px);
+      transition: background .2s, transform .15s;
+      box-shadow: 0 0 40px var(--sap-glow);
+    }
+    .sv-big-play-btn:hover {
+      background: rgba(59,130,246,0.45);
+      transform: scale(1.08);
+    }
+    .sv-big-play-btn.hidden { display: none; }
+
+    /* Below player */
+    .sv-below-player {
+      position: relative; z-index: 1;
+      padding: 2rem 4vw;
+      flex: 1;
+    }
+
+    .sv-content-info {
+      display: flex; gap: 2rem; align-items: flex-start;
+      flex-wrap: wrap; margin-bottom: 2.5rem;
+    }
+
+    .sv-content-main { flex: 1; min-width: 260px; }
+
+    .sv-content-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem; letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .sv-content-meta {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      font-size: 0.8rem; color: rgba(248,250,252,0.5);
+      margin-bottom: 0.8rem;
+    }
+    .sv-content-meta .gold { color: var(--gold); font-weight: 700; }
+
+    .sv-content-desc {
+      font-size: 0.88rem;
+      line-height: 1.65;
+      color: rgba(248,250,252,0.6);
+      max-width: 560px;
+    }
+
+    .sv-content-actions {
+      display: flex; gap: 0.75rem; margin-top: 1.2rem; flex-wrap: wrap;
+    }
+
+    /* Session info (TABLE: StreamingSession) */
+    .sv-session-info {
+      background: rgba(10,22,40,0.7);
+      border: 1px solid rgba(59,130,246,0.12);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      min-width: 200px;
+    }
+
+    .sv-session-info h4 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sap-300);
+      margin-bottom: 0.9rem;
+    }
+
+    .sv-session-row {
+      display: flex; justify-content: space-between;
+      font-size: 0.78rem; margin-bottom: 0.5rem;
+    }
+    .sv-session-label { color: var(--muted); }
+    .sv-session-val   { color: rgba(248,250,252,0.8); font-weight: 500; }
+
+    .sv-session-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(34,197,94,0.15);
+      border: 1px solid rgba(34,197,94,0.35);
+      color: #4ade80;
+      font-size: 0.68rem; font-weight: 700;
+      padding: 2px 8px; border-radius: 10px;
+    }
+    .sv-session-badge::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%; background: #4ade80;
+      animation: pulse 2s infinite;
+    }
+
+    /* Up next / related */
+    .sv-related-section { margin-top: 1rem; }
+    .sv-related-section h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem; letter-spacing: 0.06em;
+      margin-bottom: 1rem;
+    }
+    .sv-related-section h3 span { color: var(--sap-300); }
+  </style>
+</head>
+<body>
+
+<div class="sv-player-page">
+
+  <!-- MINIMAL NAV for player -->
+  <header style="position:relative;z-index:10;display:flex;align-items:center;
+    justify-content:space-between;padding:0 4vw;height:56px;
+    background:rgba(3,7,18,0.9);border-bottom:1px solid rgba(59,130,246,0.08);">
+    <a class="sv-logo" href="../index.html" style="font-size:1.5rem;">Stream<span style="-webkit-text-fill-color:var(--gold);">V</span>ault</a>
+    <div id="player-nav-title" style="font-family:'Bebas Neue';font-size:1.1rem;letter-spacing:.06em;color:rgba(248,250,252,.6);"></div>
+    <a href="javascript:history.back()" class="btn-secondary" style="padding:.5rem 1.1rem;font-size:.8rem;">← Back</a>
+  </header>
+
+  <!-- PLAYER -->
+  <div class="sv-player-wrap" id="playerWrap">
+    <div class="sv-player-bg"></div>
+    <div class="sv-player-content-icon" id="playerIcon">🎬</div>
+
+    <!-- Big play/pause -->
+    <div class="sv-big-play" id="bigPlay" onclick="togglePlay()">
+      <div class="sv-big-play-btn" id="bigPlayBtn">▶</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="sv-player-controls">
+      <!-- Progress bar -->
+      <div class="sv-player-progress" id="progressBar" onclick="seek(event)">
+        <div class="sv-player-progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <!-- Buttons -->
+      <div class="sv-player-btns">
+        <button class="sv-ctrl-btn" onclick="togglePlay()" id="playPauseBtn" title="Play/Pause">▶</button>
+        <button class="sv-ctrl-btn" onclick="skip(-10)" title="Rewind 10s">⏪</button>
+        <button class="sv-ctrl-btn" onclick="skip(10)"  title="Forward 10s">⏩</button>
+        <button class="sv-ctrl-btn" id="muteBtn" onclick="toggleMute()" title="Mute">🔊</button>
+        <span class="sv-player-time" id="timeDisplay">0:00 / 0:00</span>
+        <button class="sv-ctrl-btn" title="Subtitles">CC</button>
+        <button class="sv-ctrl-btn" title="Audio">🎧</button>
+        <button class="sv-ctrl-btn" title="Quality">4K</button>
+        <div class="sv-player-title-bar" id="ctrlTitle">—</div>
+        <button class="sv-ctrl-btn" title="Fullscreen" onclick="toggleFullscreen()">⛶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BELOW PLAYER -->
+  <div class="sv-below-player">
+    <div class="sv-content-info">
+
+      <div class="sv-content-main">
+        <div class="sv-content-title" id="contentTitle">Loading…</div>
+        <div class="sv-content-meta" id="contentMeta"></div>
+        <div class="sv-content-desc" id="contentDesc"></div>
+        <div class="sv-content-actions">
+          <button class="btn-secondary" id="listBtn" onclick="toggleList()">+ My List</button>
+          <button class="btn-icon" title="Like">👍</button>
+          <button class="btn-icon" title="Dislike">👎</button>
+          <button class="btn-icon" title="Share">↗</button>
+        </div>
+      </div>
+
+      <!-- Streaming Session Info (TABLE: StreamingSession) -->
+      <div class="sv-session-info">
+        <h4>Stream Session</h4>
+        <div class="sv-session-row">
+          <span class="sv-session-label">Status</span>
+          <span class="sv-session-badge">Active</span>
+        </div>
+        <div class="sv-session-row">
+          <span class="sv-session-label">Quality</span>
+          <span class="sv-session-val">4K HDR</span>
+        </div>
+        <div class="sv-session-row">
+          <span class="sv-session-label">Device</span>
+          <span class="sv-session-val">Web Browser</span>
+        </div>
+        <div class="sv-session-row">
+          <span class="sv-session-label">Audio</span>
+          <span class="sv-session-val">Dolby Atmos</span>
+        </div>
+        <div class="sv-session-row">
+          <span class="sv-session-label">Bandwidth</span>
+          <span class="sv-session-val">25 Mbps</span>
+        </div>
+        <div class="sv-session-row">
+          <span class="sv-session-label">Subtitle</span>
+          <span class="sv-session-val">English</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Up Next / Related -->
+    <div class="sv-related-section">
+      <h3>Up <span>Next</span></h3>
+      <div class="sv-row" id="relatedRow"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  // Get content from URL param
+  const params   = new URLSearchParams(location.search);
+  const contentId = parseInt(params.get('id')) || 1;
+  const content  = SV.getById(contentId);
+
+  if (content) {
+    document.title = `StreamVault — ${content.title}`;
+    document.getElementById('contentTitle').textContent = content.title;
+    document.getElementById('player-nav-title').textContent = content.title;
+    document.getElementById('ctrlTitle').textContent = content.title;
+    document.getElementById('playerIcon').textContent = content.icon;
+    document.getElementById('contentDesc').textContent = content.desc;
+    document.getElementById('contentMeta').innerHTML = `
+      <span class="gold">★ ${content.rating}</span>
+      <span>${content.release_year}</span>
+      <span>${content.duration}</span>
+      <span>${content.genre}</span>
+      <span style="border:1px solid rgba(59,130,246,0.4);padding:1px 8px;border-radius:4px;font-size:.68rem;color:var(--sap-200);">${content.age_rating}</span>
+    `;
+    updateListBtn();
+
+    // Related content
+    const related = SV.allContent()
+      .filter(c => c.content_id !== contentId && c.genre === content.genre)
+      .slice(0, 8);
+    document.getElementById('relatedRow').innerHTML = related.map(buildPosterCard).join('');
+  }
+
+  // ── PLAYER STATE ──
+  let isPlaying  = false;
+  let isMuted    = false;
+  let progress   = 0;
+  let totalSecs  = parseDuration(content?.duration || '2h 00m');
+  let currentSec = 0;
+  let interval   = null;
+
+  function parseDuration(str) {
+    const hm = str.match(/(\d+)h\s*(\d+)m/);
+    if (hm) return parseInt(hm[1]) * 3600 + parseInt(hm[2]) * 60;
+    const m = str.match(/(\d+)m/);
+    if (m) return parseInt(m[1]) * 60;
+    return 7200;
+  }
+
+  function fmtTime(s) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = Math.floor(s % 60);
+    return h > 0
+      ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+      : `${m}:${String(sec).padStart(2,'0')}`;
+  }
+
+  function updateUI() {
+    const pct = totalSecs > 0 ? (currentSec / totalSecs * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('timeDisplay').textContent = `${fmtTime(currentSec)} / ${fmtTime(totalSecs)}`;
+  }
+
+  function togglePlay() {
+    isPlaying = !isPlaying;
+    const btn      = document.getElementById('playPauseBtn');
+    const bigBtn   = document.getElementById('bigPlayBtn');
+    const bigPlay  = document.getElementById('bigPlay');
+
+    btn.textContent = isPlaying ? '⏸' : '▶';
+    bigBtn.textContent = isPlaying ? '⏸' : '▶';
+    bigPlay.style.opacity = isPlaying ? '0' : '1';
+    bigPlay.style.pointerEvents = isPlaying ? 'none' : 'all';
+
+    if (isPlaying) {
+      interval = setInterval(() => {
+        currentSec = Math.min(currentSec + 1, totalSecs);
+        updateUI();
+        if (currentSec >= totalSecs) {
+          clearInterval(interval);
+          isPlaying = false;
+          btn.textContent = '▶';
+          bigBtn.textContent = '▶';
+          bigPlay.style.opacity = '1';
+          bigPlay.style.pointerEvents = 'all';
+        }
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+  }
+
+  function skip(secs) {
+    currentSec = Math.max(0, Math.min(currentSec + secs, totalSecs));
+    updateUI();
+  }
+
+  function seek(e) {
+    const bar = document.getElementById('progressBar');
+    const rect = bar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    currentSec = Math.round(pct * totalSecs);
+    updateUI();
+  }
+
+  function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+  }
+
+  function toggleFullscreen() {
+    const wrap = document.getElementById('playerWrap');
+    if (!document.fullscreenElement) {
+      wrap.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }
+
+  function toggleList() {
+    SV.toggleList(contentId);
+    updateListBtn();
+  }
+
+  function updateListBtn() {
+    const btn = document.getElementById('listBtn');
+    if (btn) btn.textContent = SV.isInList(contentId) ? '✓ In My List' : '+ My List';
+  }
+
+  updateUI();
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === ' ')           { e.preventDefault(); togglePlay(); }
+    if (e.key === 'ArrowRight')  skip(10);
+    if (e.key === 'ArrowLeft')   skip(-10);
+    if (e.key === 'm')           toggleMute();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamVault — Home</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* ── HERO ── */
+    .sv-hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 6vw 8vh;
+      overflow: hidden;
+    }
+
+    .sv-hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to right, rgba(3,7,18,0.95) 30%, rgba(3,7,18,0.3) 100%),
+        linear-gradient(to top,   rgba(3,7,18,1.00)  0%, transparent 50%),
+        linear-gradient(135deg, #0a1628 0%, #1a3a6b 40%, #0f2044 70%, #030712 100%);
+    }
+
+    .sv-hero-grid {
+      position: absolute;
+      right: -2%; top: 0; bottom: 0;
+      width: 58%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 6px;
+      opacity: 0.32;
+      transform: perspective(900px) rotateY(-8deg);
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .sv-hero-poster {
+      border-radius: 5px;
+      position: relative;
+      overflow: hidden;
+    }
+    .sv-hero-poster:nth-child(3n)   { background: linear-gradient(135deg,#0f2044,#1a3a6b); }
+    .sv-hero-poster:nth-child(3n+1) { background: linear-gradient(135deg,#1e3a5f,#0a1628); }
+    .sv-hero-poster:nth-child(3n+2) { background: linear-gradient(135deg,#1a3a6b,#2563b0); }
+    .sv-hero-poster::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(59,130,246,0.25) 0%, rgba(10,22,40,0.7) 100%);
+    }
+
+    .sv-hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 560px;
+    }
+
+    .sv-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(37,99,176,0.25);
+      border: 1px solid rgba(59,130,246,0.4);
+      border-radius: 20px;
+      padding: 0.35rem 1rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sap-200);
+      margin-bottom: 1.2rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .sv-hero-badge::before {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--sap-300);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .sv-hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3.5rem, 8vw, 6rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.9rem;
+      background: linear-gradient(135deg, #f8fafc 0%, var(--sap-100) 60%, var(--sap-200) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sv-hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+      font-size: 0.82rem;
+      color: rgba(248,250,252,0.55);
+      flex-wrap: wrap;
+    }
+    .sv-hero-meta .gold { color: var(--gold); font-weight: 700; }
+    .sv-hero-meta .tag {
+      background: rgba(59,130,246,0.18);
+      border: 1px solid rgba(59,130,246,0.4);
+      padding: 1px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      color: var(--sap-200);
+    }
+
+    .sv-hero p {
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: rgba(248,250,252,0.6);
+      margin-bottom: 2rem;
+      max-width: 420px;
+    }
+
+    .sv-hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── SEARCH SECTION ── */
+    #sv-search-section {
+      display: none;
+      position: relative;
+      z-index: 1;
+      padding: 1rem 4vw 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV SHELL -->
+<header class="sv-nav" id="sv-nav"></header>
+
+<!-- HERO -->
+<div class="sv-hero">
+  <div class="sv-hero-bg"></div>
+  <div class="sv-hero-grid" id="heroGrid"></div>
+
+  <div class="sv-hero-content">
+    <div class="sv-hero-badge animate-up delay-1">🔥 Now Streaming</div>
+    <h1 class="animate-up delay-2">Abyss<br>Protocol</h1>
+    <div class="sv-hero-meta animate-up delay-3">
+      <span class="gold">★ 9.1</span>
+      <span>2025</span>
+      <span>2h 18m</span>
+      <span>Sci-Fi · Thriller</span>
+      <span class="tag">4K HDR</span>
+    </div>
+    <p class="animate-up delay-4">A deep-space research team discovers an alien signal that rewrites the laws of physics — and human consciousness. A breathtaking visual odyssey.</p>
+    <div class="sv-hero-actions animate-up delay-5">
+      <button class="btn-primary" onclick="openModal(1)">▶ &nbsp;Play Now</button>
+      <button class="btn-secondary" onclick="openModal(1)">ℹ &nbsp;More Info</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE BAR -->
+<div id="sv-profile-bar" class="sv-profile-bar"></div>
+
+<!-- SEARCH -->
+<div id="sv-search-section">
+  <div class="sv-search-wrap">
+    <span class="sv-search-icon">🔍</span>
+    <input class="sv-search-input" placeholder="Search titles, genres, actors…" oninput="filterCards(this.value)">
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- Genre Pills -->
+  <div class="sv-genre-row" id="genreRow"></div>
+
+  <!-- Continue Watching -->
+  <section class="sv-section">
+    <div class="sv-section-header">
+      <h2>Continue <span>Watching</span></h2>
+      <a href="#">See all</a>
+    </div>
+    <div class="sv-row" id="continueRow"></div>
+  </section>
+
+  <div class="glow-divider"></div>
+
+  <!-- New Releases -->
+  <section class="sv-section">
+    <div class="sv-section-header">
+      <h2>New <span>Releases</span></h2>
+      <a href="pages/movies.html">Browse</a>
+    </div>
+    <div class="sv-row" id="newRow"></div>
+  </section>
+
+  <div class="glow-divider"></div>
+
+  <!-- Top 10 -->
+  <section class="sv-section">
+    <div class="sv-section-header">
+      <h2>Top <span>10</span> Today</h2>
+    </div>
+    <div class="sv-row" id="top10Row"></div>
+  </section>
+
+  <div class="glow-divider"></div>
+
+  <!-- Trending Movies -->
+  <section class="sv-section">
+    <div class="sv-section-header">
+      <h2>Trending <span>Movies</span></h2>
+      <a href="pages/movies.html">See all</a>
+    </div>
+    <div class="sv-row" id="moviesRow"></div>
+  </section>
+
+  <div class="glow-divider"></div>
+
+  <!-- Popular Series -->
+  <section class="sv-section">
+    <div class="sv-section-header">
+      <h2>Popular <span>Series</span></h2>
+      <a href="pages/series.html">See all</a>
+    </div>
+    <div class="sv-row" id="seriesRow"></div>
+  </section>
+
+  <div class="glow-divider"></div>
+
+  <!-- Recommended -->
+  <section class="sv-section">
+    <div class="sv-section-header">
+      <h2>Recommended <span>For You</span></h2>
+    </div>
+    <div class="sv-row" id="recsRow"></div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="sv-footer" id="sv-footer"></footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  // Init shell
+  renderNav('home');
+  renderProfileBar();
+  renderFooter();
+
+  // Hero grid
+  const heroGrid = document.getElementById('heroGrid');
+  for (let i = 0; i < 12; i++) {
+    const d = document.createElement('div');
+    d.className = 'sv-hero-poster';
+    heroGrid.appendChild(d);
+  }
+
+  // Genre pills
+  document.getElementById('genreRow').innerHTML = SV.genres.map(g =>
+    `<div class="sv-genre-pill ${g.name==='All'?'active':''}" data-genre="${g.name}" onclick="toggleGenre(this, filterByGenre)">${g.name}</div>`
+  ).join('');
+
+  // Populate all rows
+  populateRow('continueRow', SV.getContinue().map(buildContinueCard).join(''));
+  populateRow('newRow',       [...SV.movies, ...SV.series].slice(0,6).map(buildWideCard).join(''));
+  populateRow('top10Row',     [...SV.movies, ...SV.series].slice(0,10).map((m,i) => buildTop10Card(m, i+1)).join(''));
+  populateRow('moviesRow',    SV.movies.map(buildPosterCard).join(''));
+  populateRow('seriesRow',    SV.series.map(buildPosterCard).join(''));
+  populateRow('recsRow',      SV.recommendations.map(id => SV.getById(id)).filter(Boolean).map(buildPosterCard).join(''));
+
+  // Genre filter
+  function filterByGenre(genre) {
+    const all = [...SV.movies, ...SV.series];
+    const filtered = genre === 'All' ? all : all.filter(c => c.genre === genre);
+    populateRow('moviesRow',  filtered.filter(c => c.type === 'Movie').map(buildPosterCard).join(''));
+    populateRow('seriesRow',  filtered.filter(c => c.type === 'Series').map(buildPosterCard).join(''));
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamVault — Series</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    #sv-search-section { display:none; padding:0 4vw 1rem; position:relative; z-index:1; }
+
+    .sv-filter-bar {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0 4vw 1.5rem; flex-wrap: wrap;
+    }
+
+    .sv-sort-select {
+      background: rgba(10,22,40,0.85);
+      border: 1px solid rgba(59,130,246,0.22);
+      border-radius: 8px; color: var(--white);
+      font-family: 'Outfit', sans-serif; font-size: 0.82rem;
+      padding: 0.5rem 0.9rem; outline: none; cursor: pointer;
+      transition: border-color .2s;
+    }
+    .sv-sort-select:focus { border-color: var(--sap-300); }
+
+    .sv-results-count { font-size: 0.78rem; color: var(--muted); margin-left: auto; }
+
+    /* Episode list for featured series */
+    .sv-ep-list {
+      position: relative; z-index: 1;
+      padding: 0 4vw 3rem;
+    }
+
+    .sv-ep-list h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.35rem; letter-spacing: 0.06em;
+      margin-bottom: 1rem;
+      color: var(--white);
+    }
+    .sv-ep-list h3 span { color: var(--sap-300); }
+
+    .sv-ep-item {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      padding: 0.85rem 1.2rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .2s;
+      border: 1px solid transparent;
+      margin-bottom: 6px;
+    }
+    .sv-ep-item:hover {
+      background: rgba(59,130,246,0.08);
+      border-color: rgba(59,130,246,0.18);
+    }
+
+    .sv-ep-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      color: var(--sap-500);
+      width: 2rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .sv-ep-thumb {
+      width: 110px; height: 62px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      position: relative; overflow: hidden;
+    }
+    .sv-ep-item:nth-child(even)   .sv-ep-thumb { background: linear-gradient(135deg,#1a3a6b,#060d1f); }
+    .sv-ep-item:nth-child(odd)    .sv-ep-thumb { background: linear-gradient(135deg,#0f2044,#1e3a5f); }
+
+    .sv-ep-play-overlay {
+      position: absolute; inset: 0;
+      background: rgba(3,7,18,0.5);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .2s;
+    }
+    .sv-ep-item:hover .sv-ep-play-overlay { opacity: 1; }
+
+    .sv-ep-info { flex: 1; }
+    .sv-ep-title { font-size: 0.88rem; font-weight: 600; }
+    .sv-ep-meta  { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .sv-ep-desc  { font-size: 0.75rem; color: rgba(248,250,252,0.45); margin-top: 4px; line-height: 1.4; }
+
+    .sv-ep-duration {
+      font-size: 0.75rem; color: var(--sap-300);
+      font-weight: 600; flex-shrink: 0;
+    }
+
+    .sv-season-tabs {
+      display: flex; gap: 8px; margin-bottom: 1.2rem;
+    }
+    .sv-season-tab {
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem; font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(59,130,246,0.22);
+      background: transparent;
+      color: rgba(248,250,252,0.55);
+      transition: all .2s;
+    }
+    .sv-season-tab.active {
+      background: var(--sap-400);
+      border-color: var(--sap-400);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<header class="sv-nav" id="sv-nav"></header>
+
+<div class="sv-page-header">
+  <h1>Series</h1>
+  <p>Binge-worthy worlds — from conspiracy thrillers to sweeping family sagas across multiple seasons.</p>
+</div>
+
+<div id="sv-search-section">
+  <div class="sv-search-wrap">
+    <span class="sv-search-icon">🔍</span>
+    <input class="sv-search-input" placeholder="Search series…" oninput="handleSearch(this.value)">
+  </div>
+</div>
+
+<div class="sv-genre-row" id="genreRow"></div>
+
+<div class="sv-filter-bar">
+  <select class="sv-sort-select" id="sortSelect" onchange="applySort()">
+    <option value="default">Sort: Featured</option>
+    <option value="rating">Sort: Highest Rated</option>
+    <option value="year_new">Sort: Newest First</option>
+    <option value="title">Sort: A → Z</option>
+  </select>
+  <span class="sv-results-count" id="resultsCount"></span>
+</div>
+
+<!-- FEATURED SERIES - Wide Cards -->
+<section class="sv-section">
+  <div class="sv-section-header">
+    <h2>Featured <span>Series</span></h2>
+  </div>
+  <div class="sv-row" id="featuredRow"></div>
+</section>
+
+<div class="glow-divider"></div>
+
+<!-- EPISODE LIST — Dark Meridian -->
+<div class="sv-ep-list">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:1rem;">
+    <h3>Dark <span>Meridian</span> — Season 2</h3>
+    <div class="sv-season-tabs">
+      <button class="sv-season-tab" onclick="switchSeason(1,this)">S1</button>
+      <button class="sv-season-tab active" onclick="switchSeason(2,this)">S2</button>
+    </div>
+  </div>
+  <div id="episodeList"></div>
+</div>
+
+<div class="glow-divider"></div>
+
+<!-- ALL SERIES GRID -->
+<section>
+  <div class="sv-section-header" style="padding:0 4vw;margin-bottom:1.2rem;position:relative;z-index:1;">
+    <h2>All <span>Series</span></h2>
+  </div>
+  <div class="sv-grid" id="seriesGrid"></div>
+</section>
+
+<footer class="sv-footer" id="sv-footer"></footer>
+
+<script src="../js/data.js"></script>
+<script src="../js/app.js"></script>
+<script>
+  renderNav('series');
+  renderFooter('../');
+
+  let currentGenre = 'All';
+  let currentSort  = 'default';
+  let searchQuery  = '';
+
+  document.getElementById('genreRow').innerHTML = SV.genres.map(g =>
+    `<div class="sv-genre-pill ${g.name==='All'?'active':''}" data-genre="${g.name}"
+      onclick="toggleGenre(this, setGenre)">${g.name}</div>`
+  ).join('');
+
+  populateRow('featuredRow', SV.series.slice(0,5).map(buildWideCard).join(''));
+
+  // Episode list
+  function renderEpisodes(seasonNum) {
+    const eps = SV.episodes.filter(e => e.season_id === seasonNum);
+    document.getElementById('episodeList').innerHTML = eps.map(ep => `
+      <div class="sv-ep-item" onclick="location.href='player.html?id=11&ep=${ep.episode_id}'">
+        <div class="sv-ep-num">${ep.episode_number}</div>
+        <div class="sv-ep-thumb">
+          🌌
+          <div class="sv-ep-play-overlay"><div class="sv-play-icon" style="width:30px;height:30px;font-size:0.8rem;">▶</div></div>
+        </div>
+        <div class="sv-ep-info">
+          <div class="sv-ep-title">${ep.title}</div>
+          <div class="sv-ep-meta">Season ${seasonNum}, Episode ${ep.episode_number}</div>
+          <div class="sv-ep-desc">An intense chapter in the ongoing investigation into the anomalous portal network.</div>
+        </div>
+        <div class="sv-ep-duration">${ep.duration}</div>
+      </div>`).join('');
+  }
+
+  function switchSeason(n, el) {
+    document.querySelectorAll('.sv-season-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderEpisodes(n);
+  }
+
+  renderEpisodes(2);
+
+  function getFiltered() {
+    let list = [...SV.series];
+    if (currentGenre !== 'All') list = list.filter(s => s.genre === currentGenre);
+    if (searchQuery) list = list.filter(s => s.title.toLowerCase().includes(searchQuery));
+    switch(currentSort) {
+      case 'rating':   list.sort((a,b) => b.rating - a.rating); break;
+      case 'year_new': list.sort((a,b) => b.release_year - a.release_year); break;
+      case 'title':    list.sort((a,b) => a.title.localeCompare(b.title)); break;
+    }
+    return list;
+  }
+
+  function render() {
+    const list = getFiltered();
+    document.getElementById('seriesGrid').innerHTML = list.length
+      ? list.map(buildPosterCard).join('')
+      : `<div style="grid-column:1/-1;text-align:center;padding:4rem 0;color:var(--muted);">No series found.</div>`;
+    document.getElementById('resultsCount').textContent = `${list.length} series`;
+  }
+
+  function setGenre(genre) { currentGenre = genre; render(); }
+  function applySort() { currentSort = document.getElementById('sortSelect').value; render(); }
+  function handleSearch(q) { searchQuery = q.toLowerCase(); render(); }
+
+  render();
+</script>
+</body>
+</html>
